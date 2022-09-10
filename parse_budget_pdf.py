@@ -4,8 +4,7 @@ import openpyxl
 
 
 def main():
-    # PDF_PATH = 'data/FY23-Tentative-Budget-Expenditures.pdf'
-    PDF_PATH = 'data/budget_2018_2019.pdf'
+    PDF_PATH = 'data/FY23-Tentative-Budget-Expenditures.pdf'
     # PDF's may be given with different numbers of budget (dollar) columns
     N_BUDGET_COLS = 5
     # 5 account number columns + 1 account description + N budget columns
@@ -48,6 +47,8 @@ def main():
 
     # first line of new page = any chars + Urbana,IL + date + Page:# + end of line
     new_page_pattern = '.*Urbana, IL \d\d/\d\d/\d\d Page:\d{1,3}$'
+    # budget line item = ##E### ####
+    budget_entry_pattern = '^\d{2}E\d{3} \d{4}'
 
     # save to these output variables
     output_lines = []
@@ -85,12 +86,17 @@ def main():
             print(f'FUND number:{current_line} name:{funds[current_line]}')
         # account number = start of string + six digit number + end of string
         elif re.match('^\d{6}$', current_line):
-            # this line is the account number, next line is the account name
-            accounts[current_line] = clean_lines[i+1]
-            i += 2
+            # edge case where the account does not have a corresponding description
+            # and the next line is a budget entry
+            if re.match(budget_entry_pattern, clean_lines[i+1]):
+                accounts[current_line] = 'BLANK'
+            # this line is the account number, next line is the account name            
+            else:
+                accounts[current_line] = clean_lines[i+1]
+            i += 1
             print(f'ACCOUNT number:{current_line} name:{accounts[current_line]}')
         # budget line item - ##E### ####
-        elif re.match('^\d{2}E\d{3} \d{4}', current_line):
+        elif re.match(budget_entry_pattern, current_line):
             # account numbers
             budget_line = current_line.split()
             # if the next line is empty or numeric, the account description is blank in the PDF
@@ -100,7 +106,7 @@ def main():
             #    1) the next budget line item
             #    2) the next page
             #    3) the maximum number of columns (helps with edge cases with subtotals)
-            while not (re.match('^\d{2}E\d{3} \d{4}', clean_lines[i+1]) or 
+            while not (re.match(budget_entry_pattern, clean_lines[i+1]) or 
                        re.match(new_page_pattern, clean_lines[i+1])):
                 i += 1
                 budget_line.append(clean_lines[i].replace(',',''))
