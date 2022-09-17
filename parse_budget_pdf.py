@@ -49,6 +49,8 @@ def main():
     new_page_pattern = '.*Urbana, IL \d\d/\d\d/\d\d Page:\d{1,3}$'
     # budget line item = ##E### ####
     budget_entry_pattern = '^\d{2}E\d{3} \d{4}'
+    # subtotal line item = ## ---
+    subtotal_line_pattern = '^\d{2} ---'
 
     # save to these output variables
     output_lines = []
@@ -95,12 +97,18 @@ def main():
                 accounts[current_line] = clean_lines[i+1]
             i += 1
             print(f'ACCOUNT number:{current_line} name:{accounts[current_line]}')
-        # budget line item - ##E### ####
+        # budget line item = ##E### ####
         elif re.match(budget_entry_pattern, current_line):
             # account numbers
             budget_line = current_line.split()
-            # if the next line is empty or numeric, the account description is blank in the PDF
-            if not clean_lines[i+1] or clean_lines[i+1].isnumeric():
+            # account description
+            if clean_lines[i+1]:
+                try:
+                    float(clean_lines[i+1].replace(',',''))
+                    budget_line.append('BLANK')
+                except ValueError:
+                    pass
+            else:
                 budget_line.append('BLANK')
             # continue adding budget line entries until we reach either
             #    1) the next budget line item
@@ -115,6 +123,20 @@ def main():
             i += 1
             print('ENTRY:', budget_line)
             output_lines.append(budget_line)
+        # subtotal = ## --- ---- ----
+        elif re.match(subtotal_line_pattern, current_line):
+            subtotal_line = current_line.split()
+            subtotal_line.append('SUBTOTAL')
+            # continue adding budget line entries until we reach the maximum number of columns
+            while True:
+                i += 1
+                subtotal_line.append(clean_lines[i].replace(',',''))
+                if len(subtotal_line) == MAX_BUDGET_ENTRY_COLS:
+                    break
+
+            i += 1
+            print('SUBTOAL:', subtotal_line)
+            # output_lines.append(subtotal_line)
         else:
             i += 1
             print(f'SKIPPING: {current_line}')
