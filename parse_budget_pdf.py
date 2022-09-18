@@ -1,37 +1,14 @@
-import re, csv
+import argparse, csv, re
 import PyPDF2
-import openpyxl
 
 
-def main():
-    PDF_PATH = 'data/FY23-Tentative-Budget-Expenditures.pdf'
-    # PDF's may be given with different numbers of budget (dollar) columns
-    N_BUDGET_COLS = 5
+def main(args):
     # 5 account number columns + 1 account description + N budget columns
-    MAX_BUDGET_ENTRY_COLS = 5 + 1 + N_BUDGET_COLS
-
-    # output_file_type = 'csv'
-    # # the relevant data starts on this line (each pdf page has a header)
-    # data_start_line = 7
-
-    # if output_file_type == 'xlsx':
-    #     # create output file object
-    #     wb = openpyxl.Workbook()
-    #     outfile = wb.active
-    #     # define function to add line to output file
-    #     add_line = lambda worksheet, line_item: worksheet.append(line_item)
-    # elif output_file_type == 'csv':
-    #     # create output file object
-    #     csvfile = open('budget.csv', 'w', newline='')
-    #     outfile = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-    #     outfile.writerow(['ftdloc', 'func', 'obj', 'sj', 'acct', 'description',
-    #                       'budget_1819', 'budget_1718', 'actual_1718'])
-    #     # define function to add line to output file
-    #     add_line = lambda csvwriter, line_item: csvwriter.writerow(line_item)
+    max_budget_entry_columns = 5 + 1 + args.n_columns
 
     # read pdf file into list
     raw_pages = []
-    with open(PDF_PATH, 'rb') as f:
+    with open(args.pdf, 'rb') as f:
         pdf = PyPDF2.PdfFileReader(f)
         for page in pdf.pages:
             raw_pages.append(page.extract_text())
@@ -118,7 +95,7 @@ def main():
                        re.match(new_page_pattern, clean_lines[i+1])):
                 i += 1
                 budget_line.append(clean_lines[i].replace(',',''))
-                if len(budget_line) == MAX_BUDGET_ENTRY_COLS:
+                if len(budget_line) == max_budget_entry_columns:
                     break
             i += 1
             print('ENTRY:', budget_line)
@@ -131,7 +108,7 @@ def main():
             while True:
                 i += 1
                 subtotal_line.append(clean_lines[i].replace(',',''))
-                if len(subtotal_line) == MAX_BUDGET_ENTRY_COLS:
+                if len(subtotal_line) == max_budget_entry_columns:
                     break
 
             i += 1
@@ -159,8 +136,12 @@ def main():
         for key, val in accounts.items():
             csvwriter.writerow([key, val])
 
-    print(funds)
-    print(accounts)
+    print('FUNDS:\n', funds)
+    print('ACCOUNTS:\n', accounts)
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--pdf', type=str, required=True, help='Path to the Budget PDF')
+    parser.add_argument('--n_columns', type=int, required=True, help='Number of columns containing budget dollars')
+    args = parser.parse_args()
+    main(args)
