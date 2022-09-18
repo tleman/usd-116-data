@@ -25,7 +25,7 @@ def main(args):
     # first line of new page = any chars + Urbana,IL + date + Page:# + end of line
     new_page_pattern = '.*Urbana, IL \d\d/\d\d/\d\d Page:\d{1,3}$'
     # budget line item = ##E### ####
-    budget_entry_pattern = '^\d{2}E\d{3} \d{4}'
+    budget_entry_pattern = '^\d{2}[A-Z]\d{3} \d{4}'
     # subtotal line item = ## ---
     subtotal_line_pattern = '^\d{2} ---'
 
