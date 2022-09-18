@@ -11,7 +11,7 @@ conda activate pypdf2
 
 # Run
 
-This tool was tested on a handful of pdf files from the USD 116 website. Users should double check the grand totals.
+This tool was tested on a handful of pdf files from the USD 116 website. When running on new pdf files, users should double check the grand totals for each budget column.
 
 ```
 python parse_budget_pdf.py --pdf "pdf/FY23-Tentative-Budget-Expenditures.pdf" --n_columns 5
